@@ -17,44 +17,44 @@ impl Money{
 }
 
 impl Add<Money> for Money{
-    type Output = money_result::MoneyResult;
-    fn add(self,other:Money)->money_result::MoneyResult{
+    type Output = MoneyResult;
+    fn add(self,other:Money)->MoneyResult{
         if self.currency == other.currency{
-            money_result::MoneyResult(Ok(Money::new(self.amount+other.amount,self.currency)))
+            MoneyResult(Ok(Money::new(self.amount+other.amount,self.currency)))
         }else{
-            money_result::MoneyResult(Err(CurrencyNotMatch(self.currency,other.currency)));
+            MoneyResult(Err(CurrencyNotMatch(self.currency,other.currency)));
         }
     }
 }
-impl Add<money_result::MoneyResult> for Money{
-    type Output = money_result::MoneyResult;
-    fn Add(self,other:money_result::MoneyResult)->money_result::MoneyResult{
+impl Add<MoneyResult> for Money{
+    type Output = MoneyResult;
+    fn Add(self,other:MoneyResult)->MoneyResult{
         if let Ok(money) = other{
             self.add(money)
         }else{
-            other
+            Propergation(Ok(self),other)
         }
     }
 
 }
 impl Sub<Money> for Money{
-    type Output = money_result::MoneyResult;
-    fn sub(self,other:Money)->money_result::MoneyResult{
+    type Output = MoneyResult;
+    fn sub(self,other:Money)->MoneyResult{
         if self.currency == other.currency{
-            money_result::MoneyResult(Ok(Money::new(self.amount-other.amount,self.currency)))
+            MoneyResult(Ok(Money::new(self.amount-other.amount,self.currency)))
         }else{
-            money_result::MoneyResult(Err(CurrencyNotMatch(self.currency,other.currency)));
+            MoneyResult(Err(CurrencyNotMatch(self.currency,other.currency)));
         }
     }
 }
 
-impl Sub<money_result::MoneyResult> for Money{
-    type Output = money_result::MoneyResult;
-    fn sub(self,other:money_result::MoneyResult)->money_result::MoneyResult{
+impl Sub<MoneyResult> for Money{
+    type Output = MoneyResult;
+    fn sub(self,other:MoneyResult)->MoneyResult{
         if let Ok(money) = other{
             self.sub(money)
         }else{
-            other
+            MoneyResult(Propergation(MoneyResult(Ok(Self)),other))
         }
     }
 }
@@ -62,7 +62,8 @@ impl Sub<money_result::MoneyResult> for Money{
 
 
 pub enum MoneyError{
-    CurrencyNotMatch(String,String),
+    CurrencyNotMatch(MoneyResult, MoneyResult),
+    Propergation(MoneyResult,MoneyResult)
 }
 
 mod money_result{
@@ -75,25 +76,48 @@ mod money_result{
     impl Add<Money> for MoneyResult{
         type Output = MoneyResult;
         fn add(self,other:Money)->MoneyResult{
-            MoneyResult(self.0.add(other))
+            
+            if let Ok(money) = self {
+                money + other
+            }else{
+                Propergation(self,other)
+            }
         }
     }
+
+
     impl Add<MoneyResult> for MoneyResult{
         type Output = MoneyResult;
         fn add(self,other:MoneyResult)->MoneyResult{
-            MoneyResult(self.0.add(other.0))
+            if let (Ok(money),Ok(other)) = (self,other) {
+                money + other
+            } else {
+                MoneyResult(Propergation(self,other))
+            }
         }
     }
+
+
     impl Sub<Money> for MoneyResult{
         type Output = MoneyResult;
         fn sub(self,other:Money)->MoneyResult{
-            MoneyResult(self.0.sub(other))
+            if let Ok(money) = self {
+                money - other
+            } else {
+                MoneyResult(Propergation(self,other))
+            }
         }
     }
+
+
     impl Sub<MoneyResult> for MoneyResult{
         type Output = MoneyResult;
         fn sub(self,other:MoneyResult)->MoneyResult{
-            MoneyResult(self.0.sub(other.0))
+            if let (Ok(money),Ok(other)) =(self,other){
+                money-other
+            } else {
+                MoneyResult(Propergation (self,other))
+            }
         }
     }
 
