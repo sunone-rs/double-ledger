@@ -45,20 +45,25 @@ impl Div<Self> for FinanceInt {
     type Output = Result<Self, ArithmeticError>;
 
     fn div(self, rhs: Self) -> Self::Output {
-        if rhs.0==0{
+        if rhs.0 == 0 {
             return Err(Div0);
         }
-        self.0.checked_div(rhs.0).map(Self).ok_or(ArithmeticError::Overflow)
+        self.0
+            .checked_div(rhs.0)
+            .map(Self)
+            .ok_or(ArithmeticError::Overflow)
     }
 }
 
 impl Neg for FinanceInt {
     type Output = Result<Self, ArithmeticError>;
     fn neg(self) -> Self::Output {
-        self.0.checked_neg().map(Self).ok_or(ArithmeticError::Overflow)
+        self.0
+            .checked_neg()
+            .map(Self)
+            .ok_or(ArithmeticError::Overflow)
     }
 }
-
 
 #[derive(Debug)]
 pub enum ArithmeticError {
@@ -81,7 +86,7 @@ impl std::error::Error for ArithmeticError {
 }
 
 impl Display for ArithmeticError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         todo!();
     }
 }
