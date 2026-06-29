@@ -3,14 +3,15 @@ use std::{
     ops::{Add, Sub},
 };
 
-trait Currency {}
+use crate::finance_number::FinanceInt;
+pub trait Currency {}
 
 #[derive(Debug)]
-struct Money<C>
+pub struct Money<C>
 where
     C: Currency,
 {
-    amount: u128,
+    _amount: FinanceInt,
     currency: PhantomData<C>,
 }
 
@@ -19,11 +20,8 @@ where
     C: Currency,
 {
     type Output = Money<C>;
-    fn add(self, rhs: Self) -> Self::Output {
-        Self::Output {
-            amount: self.amount + rhs.amount,
-            currency: self.currency,
-        }
+    fn add(self, _rhs: Self) -> Self::Output {
+        todo!("Impl add operation")
     }
 }
 
@@ -32,10 +30,7 @@ where
     C: Currency,
 {
     type Output = Money<C>;
-    fn sub(self, rhs: Self) -> Money<C> {
-        Self::Output {
-            amount: self.amount - rhs.amount,
-            currency: self.currency,
-        }
+    fn sub(self, _rhs: Self) -> Money<C> {
+        todo!("Impl sub operation")
     }
 }
