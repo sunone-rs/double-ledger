@@ -8,8 +8,12 @@ pub struct FinancePositive(pub NonZeroU128);
 
 impl Add<Self> for FinancePositive {
     type Output = Result<Self, ArithmeticError>;
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Ok(FinancePositive(NonZeroU128::new(3).unwrap()))
+        self.0
+            .checked_add(rhs.0.into())
+            .map(Self)
+            .ok_or(ArithmeticError::Overflow)
     }
 }
 
@@ -46,10 +50,26 @@ mod tests {
     #[test]
     fn test_add_same() {
         let a = FinancePositive(NonZeroU128::new(2).expect("literal value, should not fail"));
-        let c = (a.clone() + a).expect("should not overflow");
+        let b = FinancePositive(NonZeroU128::new(2).expect("literal value, should not fail"));
+        let c = (a + b).expect("should not overflow");
         assert_eq!(
             c.0,
             NonZeroU128::new(4).expect("literal value, should not fail")
+        );
+    }
+
+    #[test]
+    fn test_add_big() {
+        let a = FinancePositive(
+            NonZeroU128::new(5000000000000000000).expect("literal value, should not fail"),
+        );
+        let b = FinancePositive(
+            NonZeroU128::new(5000000000000000000).expect("literal value, should not fail"),
+        );
+        let c = (a + b).expect("should not overflow");
+        assert_eq!(
+            c.0,
+            NonZeroU128::new(10000000000000000000).expect("literal value, should not fail")
         );
     }
 
