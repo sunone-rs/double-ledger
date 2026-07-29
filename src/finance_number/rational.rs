@@ -1,82 +1,118 @@
 use std::{num::NonZeroU128, ops::Add};
 
+use num_integer::gcd;
+
+use crate::finance_number::ArithmeticError;
+
 use super::integer::FinanceInt;
-/*
-#[derive(Debug)]
+use super::positive::FinancePositive;
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct FinanceRational {
     n: FinanceInt,
-    d: NonZeroU128,
+    d: FinancePositive,
 }
 
 impl FinanceRational {
-    fn new(n: i128, d: NonZeroU128) -> Result<Self, ArithmeticError> {
-        todo!("not impl yet");
+    pub fn new(n: FinanceInt, d: FinancePositive) -> Self {
+        let n = n.0;
+        let d = d.0.get() as i128;
+        let common_factor = gcd(n, d);
+        if n == 0 {
+            return Self {
+                n: FinanceInt(0),
+                d: FinancePositive(NonZeroU128::new(1).unwrap()),
+            };
+        }
+        Self {
+            n: FinanceInt(n / common_factor),
+            d: FinancePositive(NonZeroU128::new((d / common_factor).try_into().unwrap()).unwrap()),
+        }
     }
-}
-
-#[derive(Debug)]
-pub enum ArithmeticError {
-    Div0,
-    Overflow,
-    Underflow,
 }
 
 impl Add<FinanceRational> for FinanceRational {
     type Output = Result<Self, ArithmeticError>;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        todo!("impl add operation for rational number");
+    fn add(self, rhs: FinanceRational) -> Self::Output {
+        let (n, d) = internal::add_simple_rat(self.n, self.d, rhs.n, rhs.d)?;
+        Ok(FinanceRational::new(n, d))
+    }
+}
+
+mod internal {
+    use super::ArithmeticError;
+    use super::FinanceInt;
+    use super::FinancePositive;
+
+    pub fn add_simple_rat(
+        n1: FinanceInt,
+        d1: FinancePositive,
+        n2: FinanceInt,
+        d2: FinancePositive,
+    ) -> Result<(FinanceInt, FinancePositive), ArithmeticError> {
+        let cm = d1.clone() * d2.clone();
+        let n = n1 * d2.try_into()?;
+        let n2 = n2 * d1.try_into()?;
+        let n_sum = n? + n2?;
+        Ok((n_sum?, cm?))
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod test {
+    use crate::finance_number::{integer::FinanceInt, positive::FinancePositive};
+
+    use super::FinanceRational;
+    use std::num::NonZeroU128;
 
     #[test]
     fn test_new() {
-        let a = FinanceRational::new(1, 2).expect("should not overflow");
+        let a = FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(2).unwrap()));
         assert_eq!(a.n, FinanceInt(1));
-        assert_eq!(a.d, FinanceInt(2));
+        assert_eq!(a.d, FinancePositive(NonZeroU128::new(2).unwrap()));
     }
 
     #[test]
-    fn test_new_div0() {
-        let a = FinanceRational::new(1, 0); //should div by zero
-        assert!(matches!(a, Err(ArithmeticError::Div0)));
+    fn test_new_reduce_fraction() {
+        let a = FinanceRational::new(FinanceInt(2), FinancePositive(NonZeroU128::new(4).unwrap()));
+        assert_eq!(a.n, FinanceInt(1));
+        assert_eq!(a.d, FinancePositive(NonZeroU128::new(2).unwrap()));
     }
 
     #[test]
-    fn test_new_negative_denominator() {
-        let a = FinanceRational::new(1, -2).expect("constant value");
-        assert_eq!(a.n, FinanceInt(-1));
-        assert_eq!(a.d, FinanceInt(2));
-    }
-
-    #[test]
-    fn test_add_same_denominator() {
-        let a = FinanceRational::new(1, 2).expect("constant value");
-        let b = FinanceRational::new(1, 2).expect("constant value");
+    fn test_add() {
+        let a = FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(2).unwrap()));
+        let b = FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(2).unwrap()));
         let c = (a + b).expect("should not overflow");
-        assert_eq!(c.n, FinanceInt(1));
-        assert_eq!(c.d, FinanceInt(1));
+        assert_eq!(
+            c,
+            FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(1).unwrap()))
+        );
     }
 
     #[test]
-    fn test_add_diff_denominator() {
-        let a = FinanceRational::new(1, 2).expect("constant value");
-        let b = FinanceRational::new(1, 4).expect("constant value");
+    fn test_add_zero() {
+        let a = FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(2).unwrap()));
+        let b = FinanceRational::new(FinanceInt(0), FinancePositive(NonZeroU128::new(1).unwrap()));
         let c = (a + b).expect("should not overflow");
-        assert_eq!(c.n, FinanceInt(3));
-        assert_eq!(c.d, FinanceInt(4));
+        assert_eq!(
+            c,
+            FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(2).unwrap()))
+        );
     }
 
-    fn test_add_diff_denominator_anti_overflow() {
-        let a = FinanceRational::new(1, i128::MAX).expect("constant value");
-        let b = FinanceRational::new(1, i128::MAX - 1).expect("constant value");
+    #[test]
+    fn test_add_negative() {
+        let a = FinanceRational::new(FinanceInt(1), FinancePositive(NonZeroU128::new(2).unwrap()));
+        let b = FinanceRational::new(
+            FinanceInt(-1),
+            FinancePositive(NonZeroU128::new(2).unwrap()),
+        );
         let c = (a + b).expect("should not overflow");
-        assert_eq!(c.n, FinanceInt(1));
-        assert_eq!(c.d, FinanceInt(1));
+        assert_eq!(
+            c,
+            FinanceRational::new(FinanceInt(0), FinancePositive(NonZeroU128::new(1).unwrap()))
+        );
     }
 }
-    */

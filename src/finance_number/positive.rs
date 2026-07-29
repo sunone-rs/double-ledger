@@ -6,6 +6,21 @@ use std::ops::{Add, Div, Mul};
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
 pub struct FinancePositive(pub NonZeroU128);
 
+impl From<NonZeroU128> for FinancePositive {
+    fn from(value: NonZeroU128) -> Self {
+        Self(value)
+    }
+}
+
+impl TryFrom<u128> for FinancePositive {
+    type Error = ArithmeticError;
+    fn try_from(value: u128) -> Result<Self, Self::Error> {
+        NonZeroU128::new(value)
+            .map(Self)
+            .ok_or(ArithmeticError::ZeroOnNonZeroValue)
+    }
+}
+
 impl Add<Self> for FinancePositive {
     type Output = Result<Self, ArithmeticError>;
     #[inline]

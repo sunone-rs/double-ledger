@@ -1,6 +1,6 @@
 //! Finance number module that provide safe calculation for finance.
 //!
-use std::error::Error;
+
 use std::fmt::Display;
 
 pub mod integer;

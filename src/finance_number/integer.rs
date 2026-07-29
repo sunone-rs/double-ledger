@@ -1,3 +1,5 @@
+use crate::finance_number::positive::FinancePositive;
+
 use super::ArithmeticError;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -5,6 +7,24 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 ///
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
 pub struct FinanceInt(pub i128);
+
+impl From<i128> for FinanceInt {
+    fn from(value: i128) -> Self {
+        Self(value)
+    }
+}
+
+impl TryFrom<FinancePositive> for FinanceInt {
+    type Error = ArithmeticError;
+
+    fn try_from(value: FinancePositive) -> Result<Self, Self::Error> {
+        if value.0.get() > i128::MAX as u128 {
+            Err(ArithmeticError::Overflow)
+        } else {
+            Ok(Self(value.0.get() as i128))
+        }
+    }
+}
 
 impl Add<Self> for FinanceInt {
     type Output = Result<Self, ArithmeticError>;
@@ -82,6 +102,15 @@ impl Neg for FinanceInt {
     }
 }
 
+impl FinanceInt {
+    pub fn gcd(a: Self, b: Self) -> Self {
+        Self(num::integer::gcd(a.0, b.0))
+    }
+
+    pub fn lcm(a: Self, b: Self) -> Self {
+        Self(num::integer::lcm(a.0, b.0))
+    }
+}
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
