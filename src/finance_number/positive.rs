@@ -1,12 +1,23 @@
 use super::ArithmeticError;
 use std::num::NonZeroU128;
-use std::ops::{Add, Div, Mul};
+use std::ops::{Add, Div, Mul, Sub};
 
-/// A lightweight wrapper around NonZeroI128 that provides checked arithmetic operations for finance.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+/// A non-zero positive integer for finance calculation.
+/// # Invariants
+/// * Always non-zero value.
+/// * Always positive value.
+/// # Safety
+/// * Always checked calculation performed.
+/// * Not be panic
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub struct FinancePositive(pub NonZeroU128);
 
 impl From<NonZeroU128> for FinancePositive {
+    /// Convert NonZeroU128 to FinancePositive.
+    /// # Details
+    /// This function converts a NonZeroU128 to a FinancePositive.
+    /// # Safety
+    /// This method never fails, because .
     fn from(value: NonZeroU128) -> Self {
         Self(value)
     }
@@ -14,15 +25,41 @@ impl From<NonZeroU128> for FinancePositive {
 
 impl TryFrom<u128> for FinancePositive {
     type Error = ArithmeticError;
+    /// Convert u128 to FinancePositive.
+    /// # Details
+    /// This function converts a u128 to a FinancePositive.
+    /// # Errors
+    /// This function returns ZeroOnNonZeroValue when input is 0
     fn try_from(value: u128) -> Result<Self, Self::Error> {
         NonZeroU128::new(value)
             .map(Self)
-            .ok_or(ArithmeticError::ZeroOnNonZeroValue)
+            .ok_or(ArithmeticError::VaueOutOfBound)
+    }
+}
+
+impl TryFrom<i128> for FinancePositive {
+    type Error = ArithmeticError;
+    /// Convert i128 to FinancePositive.
+    /// # Details
+    /// This function converts a i128 to a FinancePositive.
+    /// # Errors
+    /// This function returns ZeroOnNonZeroValue when input is 0
+    /// This function returns Overflow when input is negative
+    fn try_from(value: i128) -> Result<Self, Self::Error> {
+        if value <= 0 {
+            return Err(ArithmeticError::VaueOutOfBound);
+        }
+        Self::try_from(value as u128)
     }
 }
 
 impl Add<Self> for FinancePositive {
     type Output = Result<Self, ArithmeticError>;
+    /// Perform add operation for two finance positive numbers.
+    /// # Details
+    /// This function adds two finance positive numbers and returns the result.
+    /// # Errors
+    /// This function returns Overflow if the result overflows.
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         self.0
@@ -32,8 +69,31 @@ impl Add<Self> for FinancePositive {
     }
 }
 
+impl Sub<Self> for FinancePositive {
+    type Output = Result<Self, ArithmeticError>;
+    /// Perform subtraction operation for two finance positive numbers.
+    /// # Details
+    /// This function subtracts two finance positive numbers and returns the result.
+    /// # Errors
+    /// This function returns Overflow when right hand value is equal or greater than left hand value.
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        let result = self.0.get().checked_sub(rhs.0.get());
+        match result {
+            Some(value) if value > 0 => Self::try_from(value),
+            _ => Err(ArithmeticError::Overflow),
+        }
+    }
+}
+
 impl Mul<Self> for FinancePositive {
     type Output = Result<Self, ArithmeticError>;
+    /// Perform multiplication operation for two finance positive numbers.
+    /// # Details
+    /// This function multiplies two finance positive numbers and returns the result.
+    /// # Errors
+    /// This function returns Overflow if the result overflows.
+    #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
         self.0
             .checked_mul(rhs.0)
@@ -44,6 +104,13 @@ impl Mul<Self> for FinancePositive {
 
 impl Div<Self> for FinancePositive {
     type Output = Result<Self, ArithmeticError>;
+    /// Perform division operation for two finance positive numbers.
+    /// # Details
+    /// This function divides two finance positive numbers and returns the result.
+    /// # Errors
+    /// This function returns Indivisible if the result is not an integer.
+    /// This function returns ZeroOnNonZeroValue if the result is 0.
+    #[inline]
     fn div(self, rhs: Self) -> Self::Output {
         let result = (self.0.get() / rhs.0.get(), self.0.get() % rhs.0.get());
 
@@ -54,7 +121,7 @@ impl Div<Self> for FinancePositive {
             ));
         }
         if result.0 == 0 {
-            return Err(ArithmeticError::ZeroOnNonZeroValue);
+            return Err(ArithmeticError::VaueOutOfBound);
         }
         Ok(FinancePositive(NonZeroU128::new(result.0).unwrap()))
     }

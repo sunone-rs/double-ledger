@@ -12,7 +12,7 @@ pub enum ArithmeticError {
     Overflow,
     Div0,
     Indivisible(i128, i128),
-    ZeroOnNonZeroValue,
+    VaueOutOfBound,
 }
 
 impl std::error::Error for ArithmeticError {

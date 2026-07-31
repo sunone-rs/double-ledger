@@ -26,6 +26,17 @@ impl TryFrom<FinancePositive> for FinanceInt {
     }
 }
 
+impl TryFrom<u128> for FinanceInt {
+    type Error = ArithmeticError;
+    fn try_from(value: u128) -> Result<Self, Self::Error> {
+        if value > i128::MAX as u128 {
+            Err(ArithmeticError::VaueOutOfBound)
+        } else {
+            Ok(Self(value as i128))
+        }
+    }
+}
+
 impl Add<Self> for FinanceInt {
     type Output = Result<Self, ArithmeticError>;
     /// Perform checked add operation.
