@@ -16,7 +16,7 @@ use std::{
 /// # Safety
 /// * Always checked calculation performed.
 /// * Not be panic
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct FinanceRational {
     n: FinanceInt,
     d: FinancePositive,
@@ -136,7 +136,7 @@ impl Inv for FinanceRational {
     /// This method may return `ArithmeticError::Overflow` if the result overflows `i128` or
     /// `u128`.
     fn inv(self) -> Self::Output {
-        let neg = if self.n < FinanceInt(0) { true } else { false };
+        let neg = self.n < FinanceInt(0);
         let den = FinancePositive::try_from(self.n.0.abs())?;
         let num = FinanceInt::try_from(self.d.0.get())?;
 
@@ -170,7 +170,7 @@ fn add_simple_rat(
     n2: FinanceInt,
     d2: FinancePositive,
 ) -> Result<(FinanceInt, FinancePositive), ArithmeticError> {
-    let cm = d1.clone() * d2.clone();
+    let cm = d1 * d2;
     let n = n1 * d2.try_into()?;
     let n2 = n2 * d1.try_into()?;
     let n_sum = n? + n2?;

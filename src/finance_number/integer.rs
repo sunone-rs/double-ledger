@@ -1,11 +1,11 @@
+use super::ArithmeticError;
 use crate::finance_number::positive::FinancePositive;
 
-use super::ArithmeticError;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 /// A lightweight wrapper around i128 that provides checked arithmetic operations for finance.
 ///
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub struct FinanceInt(pub i128);
 
 impl From<i128> for FinanceInt {
@@ -51,7 +51,7 @@ impl Add<Self> for FinanceInt {
     /// # Examples
     ///
     /// ```rust
-    /// use double_ledger::finance_number::FinanceInt;
+    /// use double_ledger::finance_number::integer::FinanceInt;
     /// let a = FinanceInt(1);
     /// let b = FinanceInt(2);
     /// let c = a + b;
