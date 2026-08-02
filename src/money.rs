@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Sub},
 };
 
-use crate::finance_number::FinanceInt;
+use crate::finance_number::integer::FinanceInt;
 pub trait Currency {}
 
 #[derive(Debug)]

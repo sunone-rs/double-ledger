@@ -6,3 +6,5 @@ authors = ["SuNone_rs"]
 license ="MIT OR Apache-2.0" 
 
 [dependencies]
+num = "0.4"
+num-integer = "0.1.45"
