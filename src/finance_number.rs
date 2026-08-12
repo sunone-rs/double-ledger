@@ -5,9 +5,9 @@
 use std::fmt::Display;
 
 pub mod integer;
+pub mod maybe;
 pub mod positive;
 pub mod rational;
-pub mod maybe;
 
 #[derive(Debug)]
 pub enum ArithmeticError {
