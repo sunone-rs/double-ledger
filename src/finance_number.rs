@@ -1,9 +1,11 @@
+//! finance_numberモジュールは安全な通貨計算のための型を提供するモジュールです。
 //! Finance number module that provide safe calculation for finance.
 //!
 
 use std::fmt::Display;
 
 pub mod integer;
+pub mod maybe;
 pub mod positive;
 pub mod rational;
 
