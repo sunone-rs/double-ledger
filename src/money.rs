@@ -25,7 +25,7 @@ where
     }
 }
 
-impl<T> Add for Money<T>
+impl<T> Add<Money<T>> for Money<T>
 where
     T: CurrencyUnit,
 {
