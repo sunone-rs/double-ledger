@@ -7,12 +7,16 @@
 //! - panic not be occured before unwrap.
 //! - checked arithmetic used.
 //! - If error, the MaybeCalc will return the Error variant and do not panic.
-use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use std::{
+    iter::Sum,
+    ops::{Add, Div, Mul, Neg, Rem, Sub},
+};
 
 use num::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub,
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Zero,
     traits::{CheckedNeg, CheckedRem},
 };
+
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CalcErr {
@@ -79,7 +83,7 @@ impl<T> MaybeCalc<T> {
     /// assert_eq!(b.is_just(), false);
     /// ```
     #[inline]
-    pub fn is_just(self) -> bool {
+    pub fn is_just(&self) -> bool {
         match self {
             MaybeCalc::Just(_) => true,
             MaybeCalc::Error(_) => false,
@@ -103,7 +107,7 @@ impl<T> MaybeCalc<T> {
     /// assert_eq!(b.is_err(), true);
     /// ```
     #[inline]
-    pub fn is_err(self) -> bool {
+    pub fn is_err(&self) -> bool {
         match self {
             MaybeCalc::Just(_) => false,
             MaybeCalc::Error(_) => true,
@@ -310,19 +314,6 @@ impl<T> From<Option<T>> for MaybeCalc<T> {
     }
 }
 
-/// Convert numbers into Just
-/// # Example
-/// ```rust
-/// use double_ledger::finance_number::maybe::MaybeCalc;
-///
-/// let a = MaybeCalc::from(1);
-///
-/// ```
-impl<T> From<T> for MaybeCalc<T> {
-    fn from(value: T) -> Self {
-        MaybeCalc::Just(value)
-    }
-}
 
 impl<T> Add<Self> for MaybeCalc<T>
 where
@@ -542,6 +533,56 @@ where
             Some(x) => MaybeCalc::Just(x),
             None => MaybeCalc::Error(CalcErr::Overflow),
         })
+    }
+}
+
+impl<T> Sum<MaybeCalc<T>> for MaybeCalc<T>
+where
+    T: Default + CheckedAdd,
+{
+    fn sum<I: IntoIterator<Item = Self>>(iter: I) -> Self {
+        iter.into_iter().fold(MaybeCalc::default(), |acc, x| acc + x)
+    }
+}
+
+impl <T> Default for MaybeCalc<T>
+where T: Default{
+    fn default() -> Self {
+        MaybeCalc::Just(T::default())
+    }
+}
+
+
+impl<T> CheckedAdd for MaybeCalc<T>
+where
+    T: CheckedAdd,
+{
+    fn checked_add(&self, rhs: &Self) -> Option<Self> {
+        if let (MaybeCalc::Just(l), MaybeCalc::Just(r)) = (self, rhs) {
+            l.checked_add(r).map(|x| MaybeCalc::Just(x))
+        } else {
+            None
+        }
+    }
+}
+
+impl<T> Zero for MaybeCalc<T>
+where
+    T: Zero + CheckedAdd,
+{
+    fn zero() -> Self {
+        MaybeCalc::Just(T::zero())
+    }
+
+    fn is_zero(&self) -> bool {
+        match self {
+            MaybeCalc::Just(x) => x.is_zero(),
+            MaybeCalc::Error(_) => false,
+        }
+    }
+
+    fn set_zero(&mut self) {
+        *self = MaybeCalc::Just(T::zero());
     }
 }
 
